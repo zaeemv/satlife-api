@@ -1,11 +1,9 @@
-from app.models.tables import (Entity)
-from sqlmodel import Field
-from datetime import datetime, timezone
+from app.models.tables import (Entity, User)
 from app.schemas import schemas
 from app.services.create_entitystatusHistory import create_status_history
 
 
-def New_entity(session, entity:any, entity_name:str) -> Entity:
+def New_entity(session, entity:any, entity_name:str, current_user: User) -> Entity:
 
     entity_data=schemas.EntityCreate(
             name=f"{entity_name}-{entity.id}",
@@ -25,7 +23,7 @@ def New_entity(session, entity:any, entity_name:str) -> Entity:
         history_data=schemas.EntityStatusHistoryCreate(
             entity_id=entity.id,
             status_id=entity.status_id,
-            changed_by=5
+            changed_by=current_user.id if current_user else None,
         )
     )
     return entity

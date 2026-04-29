@@ -17,6 +17,21 @@ def create_status(status: schemas.StatusCreate, session: Session = Depends(get_s
     session.refresh(db_status)
     return db_status
 
+
+@router.post("/statuses/batch/", response_model=List[schemas.StatusRead], tags=["statuses"])
+def create_status(statuses: List[schemas.StatusCreate], session: Session = Depends(get_session), current_user: User = Depends(require_permission("create_statuses"))):
+
+    db_statuses = [Status(**status.model_dump()) for status in statuses]
+
+    session.add_all(db_statuses)   # add multiple
+    session.commit()
+
+    for db_status in db_statuses:
+        session.refresh(db_status)
+
+    return db_statuses
+
+
 @router.get("/statuses/", response_model=List[schemas.StatusRead], tags=["statuses"])
 def list_statuses(
     status_type: str | None = None,   # 👈 add this

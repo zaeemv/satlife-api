@@ -16,7 +16,11 @@ router = APIRouter()
 
 # ===================== PROJECT ENDPOINTS =====================
 @router.post("/projects/", response_model=schemas.ProjectRead, tags=["projects"])
-def create_project(project: schemas.ProjectCreate, session: Session = Depends(get_session), current_user: User = Depends(require_permission("create_projects"))):
+def create_project(
+    project: schemas.ProjectCreate, 
+    session: Session = Depends(get_session), 
+    current_user: User = Depends(require_permission("create_projects")),
+    ):
     db_project = Project(**project.model_dump())
     session.add(db_project)
     session.flush()
@@ -25,7 +29,7 @@ def create_project(project: schemas.ProjectCreate, session: Session = Depends(ge
 #    1.  Entity status
 #    2.  Entity Status History
 # --------------------------------------------------------------------------------------------------------------------------------------------
-    New_entity(session=session, entity=db_project, entity_name = entity_config["display_name"])
+    New_entity(session=session, entity=db_project, entity_name = entity_config["display_name"], current_user= current_user)
 # --------------------------------------------------------------------------------------------------------------------------------------------
 
     session.commit()
@@ -74,7 +78,7 @@ def update_project(project_id: int, project: schemas.ProjectUpdate, session: Ses
 
 # Update Entity status and Create Entity Status History
 # --------------------------------------------------------------------------------------------------------------------------------------------
-    update_entity_status(session=session, entity= db_project, entity_name = entity_config["display_name"])
+    update_entity_status(session=session, entity= db_project, entity_name = entity_config["display_name"], current_user= current_user)
     session.commit()
     session.refresh(db_project)
     status_name = db_project.status.name if db_project.status else None

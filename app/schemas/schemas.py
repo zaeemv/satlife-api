@@ -121,7 +121,8 @@ class ProjectUpdate(SQLModel):
 
 # ---- System / Subsystem / Module / Unit / Component ----
 class SystemCreate(SystemBase):
-    pass
+    project_id: int
+    status_id: Optional[int] = None
 
 class SystemRead(SystemBase):
     id: int
@@ -140,7 +141,8 @@ class SystemUpdate(SQLModel):
     status_id: Optional[int] = None
 
 class SubsystemCreate(SubsystemBase):
-    pass
+    system_id: int
+    status_id: Optional[int] = None
 
 class SubsystemRead(SubsystemBase):
     id: int
@@ -159,7 +161,8 @@ class SubsystemUpdate(SQLModel):
     status_id: Optional[int] = None
 
 class ModuleCreate(ModuleBase):
-    pass
+    subsystem_id: int
+    status_id: Optional[int] = None
 
 class ModuleRead(ModuleBase):
     id: int
@@ -178,7 +181,8 @@ class ModuleUpdate(SQLModel):
     status_id: Optional[int] = None
 
 class UnitCreate(UnitBase):
-    pass
+    module_id: Optional[int] = None
+    status_id: Optional[int] = None
 
 class UnitRead(UnitBase):
     id: int
@@ -197,7 +201,8 @@ class UnitUpdate(SQLModel):
     status_id: Optional[int] = None
 
 class ComponentCreate(ComponentBase):
-    pass
+    unit_id: Optional[int] = None
+    status_id: Optional[int] = None
 
 class ComponentRead(ComponentBase):
     id: int

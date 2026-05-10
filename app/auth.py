@@ -187,6 +187,10 @@ DEFAULT_PERMISSIONS = [
     {"name": "create_statuses", "description": "Create statuses"},
     {"name": "edit_statuses", "description": "Edit statuses"},
     {"name": "delete_statuses", "description": "Delete statuses"},
+    {"name": "view_hierarchy", "description": "View hierarchy entries"},
+    {"name": "create_hierarchy", "description": "Create hierarchy entries"},
+    {"name": "edit_hierarchy", "description": "Edit hierarchy entries"},
+    {"name": "delete_hierarchy", "description": "Delete hierarchy entries"},
     
     {"name": "view_status_history", "description": "View entity status history"},
     {"name": "create_status_history", "description": "Create status history"},
@@ -235,7 +239,9 @@ DEFAULT_ROLES = [
             # Entities
             "view_entities", "create_entities", "edit_entities",
             # Status
-            "view_statuses", "view_status_history"
+            "view_statuses", "view_status_history",
+            # Hierarchy
+            "view_hierarchy", "create_hierarchy", "edit_hierarchy"
         ]
     },
     {
@@ -328,6 +334,8 @@ DEFAULT_ROLES = [
             "view_statuses",
             # Status History
             "view_status_history",
+            # Hierarchy
+            "view_hierarchy",
             # Reports
             "view_reports"
         ]

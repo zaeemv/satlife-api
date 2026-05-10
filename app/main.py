@@ -3,14 +3,14 @@ from app.database import init_db, close_db, engine
 from sqlmodel import Session
 from contextlib import asynccontextmanager
 from app.routers import router
-from app.auth import initialize_roles_and_permissions
+from app.auth import sync_roles_and_permissions
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    # Initialize default roles and permissions
+    # Sync default roles and permissions with the database
     with Session(engine) as session:
-        initialize_roles_and_permissions(session)
+        sync_roles_and_permissions(session)
     try:
         yield
     finally:

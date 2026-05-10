@@ -43,6 +43,10 @@ class Status(StatusBase, table=True):
     entities: List["Entity"] = Relationship(back_populates="status")
     history_records: List["EntityStatusHistory"] = Relationship(back_populates="status")
 
+class Hierarchy(HierarchyBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    parent_id: Optional[int] = Field(default=None, foreign_key="hierarchy.id")
+
 class Order(OrderBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     customer_id: int = Field(foreign_key="customer.id")

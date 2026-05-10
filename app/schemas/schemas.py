@@ -30,6 +30,7 @@ from app.models.base import (
     EntityCommon,
     EntityStatusHistoryCommon,
     MaintenanceLogCommon,
+    HierarchyBase,
 )
 
 # ---- User ----
@@ -76,6 +77,20 @@ class StatusRead(StatusBase):
 class StatusUpdate(SQLModel):
     name: Optional[str] = None
     description: Optional[str] = None
+
+class HierarchyCreate(HierarchyBase):
+    pass
+
+class HierarchyRead(HierarchyBase):
+    id: int
+    class Config:
+        orm_mode = True
+
+class HierarchyUpdate(SQLModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    hierarchy_type: Optional[str] = None
+    parent_id: Optional[int] = None
 
 # ---- Order ----
 class OrderCreate(OrderBase):

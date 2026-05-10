@@ -46,6 +46,15 @@ class StatusCommon(SQLModel):
 class StatusBase(StatusCommon):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class HierarchyCommon(SQLModel):
+    name: str
+    description: Optional[str] = None
+    hierarchy_type: str
+    parent_id: Optional[int] = None
+
+class HierarchyBase(HierarchyCommon):
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class OrderCommon(SQLModel):
     customer_id: int
     order_number: Optional[str] = None

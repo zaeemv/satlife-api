@@ -17,7 +17,7 @@ component = import_module('._9_component', package='app.routers')
 inventory = import_module('._10_inventory', package='app.routers')
 
 # Import regular named modules using relative imports
-from . import entity, entitystatushistory, maintenanceLog, status, auth
+from . import entity, entitystatushistory, maintenanceLog, status, hierarchy, auth
 
 # Include all routers
 router.include_router(auth.router)
@@ -35,4 +35,5 @@ router.include_router(entity.router)
 router.include_router(entitystatushistory.router)
 router.include_router(maintenanceLog.router)
 router.include_router(status.router)
+router.include_router(hierarchy.router)
 

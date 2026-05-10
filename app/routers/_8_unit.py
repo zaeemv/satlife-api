@@ -74,7 +74,7 @@ def update_unit(unit_id: int, unit: schemas.UnitUpdate, session: Session = Depen
 
 # Update Entity status and Create Entity Status History
 # --------------------------------------------------------------------------------------------------------------------------------------------
-    update_entity_status(session=session, entity= db_unit, entity_name = entity_config["display_name"])
+    update_entity_status(session=session, entity= db_unit, entity_name = entity_config["display_name"], current_user=current_user)
 
     session.commit()
     session.refresh(db_unit)

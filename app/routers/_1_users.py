@@ -67,6 +67,21 @@ def get_user(user_id: int, session: Session = Depends(get_session), current_user
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+@router.get("/users/with-roles", tags=["users"])
+def list_users_with_roles(session: Session = Depends(get_session)):
+    users = session.exec(select(User)).all()
+
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "full_name": u.full_name,
+            "email": u.email,
+            "roles": [r.name for r in u.roles],
+        }
+        for u in users
+    ]
+
 @router.put("/users/{user_id}/", response_model=schemas.UserRead, tags=["users"])
 def update_user(user_id: int, user: schemas.UserUpdate, session: Session = Depends(get_session), current_user: User = Depends(require_permission("edit_users"))):
     db_user = session.get(User, user_id)
@@ -125,3 +140,4 @@ def list_user_roles(
         )
 
     return user.roles
+

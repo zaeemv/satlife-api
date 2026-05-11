@@ -51,6 +51,14 @@ class UserUpdate(SQLModel):
     full_name: Optional[str] = None
     is_active: Optional[bool] = None
 
+
+class UserWithRoles(UserBase):
+    id: int
+    username: str
+    full_name: str
+    email: str | None = None
+    roles: List[str]
+
 # ---- Customer ----
 class CustomerCreate(CustomerBase):
     pass

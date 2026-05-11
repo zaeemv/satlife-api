@@ -105,3 +105,23 @@ def list_user_projects(user_id: int, session: Session = Depends(get_session), cu
         raise HTTPException(status_code=404, detail="User not found")
     return user.projects
 
+
+@router.get(
+    "/users/{user_id}/roles/",
+    response_model=List[schemas.RoleRead],
+    tags=["users"]
+)
+def list_user_roles(
+    user_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_permission("view_users"))
+):
+    user = session.get(User, user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return user.roles

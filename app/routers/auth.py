@@ -289,6 +289,22 @@ def remove_role_from_user(
         "role_id": role.id
     }
 
+@router.delete("/deregister/{user_id}")
+def deregister_user(
+    user_id: int,
+    user: User = Depends(require_role("Admin")),
+    session: Session = Depends(get_session)
+):
+    """Deregister (delete) a user by id. Requires Admin role."""
+    target_user = session.get(User, user_id)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target_user.id == user.id:
+        raise HTTPException(status_code=400, detail="Admin cannot deregister themselves")
+    session.delete(target_user)
+    session.commit()
+    return {"message": f"User '{target_user.username}' deregistered successfully", "user_id": user_id}
+
 # ==================== CURRENT USER INFO ====================
 @router.get("/me", response_model=schemas.UserReadWithRoles)
 def get_current_user_info(

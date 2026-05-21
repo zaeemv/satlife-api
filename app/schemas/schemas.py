@@ -33,6 +33,7 @@ from app.models.base import (
     HierarchyBase,
 )
 
+
 # ---- User ----
 
 class UserCreate(UserBase):
@@ -41,6 +42,8 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: int
     projects: Optional[List["ProjectRead"]] = None
+    roles: Optional[List["RoleRead"]] = None
+    permissions: List[str] = []
 
     class Config:
         orm_mode = True
@@ -144,8 +147,8 @@ class ProjectUpdate(SQLModel):
 
 # ---- System / Subsystem / Module / Unit / Component ----
 class SystemCreate(SystemBase):
-    project_id: int
     status_id: Optional[int] = None
+    status_name: Optional[str] = None
 
 class SystemRead(SystemBase):
     id: int
@@ -162,10 +165,14 @@ class SystemUpdate(SQLModel):
     name: Optional[str] = None
     description: Optional[str] = None
     status_id: Optional[int] = None
+    part_number: Optional[str] = None
+    serial_number: Optional[str] = None
+    configuration_item: Optional[str] = None
 
 class SubsystemCreate(SubsystemBase):
     system_id: int
     status_id: Optional[int] = None
+
 
 class SubsystemRead(SubsystemBase):
     id: int
@@ -182,6 +189,9 @@ class SubsystemUpdate(SQLModel):
     name: Optional[str] = None
     description: Optional[str] = None
     status_id: Optional[int] = None
+    part_number: Optional[str] = None
+    serial_number: Optional[str] = None
+    configuration_item: Optional[str] = None
 
 class ModuleCreate(ModuleBase):
     subsystem_id: int
@@ -202,6 +212,9 @@ class ModuleUpdate(SQLModel):
     name: Optional[str] = None
     description: Optional[str] = None
     status_id: Optional[int] = None
+    part_number: Optional[str] = None
+    serial_number: Optional[str] = None
+    configuration_item: Optional[str] = None
 
 class UnitCreate(UnitBase):
     module_id: Optional[int] = None
@@ -222,6 +235,9 @@ class UnitUpdate(SQLModel):
     name: Optional[str] = None
     description: Optional[str] = None
     status_id: Optional[int] = None
+    part_number: Optional[str] = None
+    serial_number: Optional[str] = None
+    configuration_item: Optional[str] = None
 
 class ComponentCreate(ComponentBase):
     unit_id: Optional[int] = None
@@ -243,6 +259,9 @@ class ComponentUpdate(SQLModel):
     sku: Optional[str] = None
     description: Optional[str] = None
     status_id: Optional[int] = None
+    part_number: Optional[str] = None
+    serial_number: Optional[str] = None
+    configuration_item: Optional[str] = None
 
 # ---- Inventory ----
 class InventoryCreate(InventoryBase):
@@ -312,6 +331,9 @@ class MaintenanceLogUpdate(SQLModel):
     performed_by: Optional[int] = None
     notes: Optional[str] = None
     next_due: Optional[datetime] = None
+
+
+
 
 
 

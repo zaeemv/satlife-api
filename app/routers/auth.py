@@ -110,6 +110,47 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = D
         permissions=permissions
     )
 
+
+@router.post("/token/", response_model=schemas.TokenResponse)
+def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    """Login endpoint. Returns JWT token with user info and permissions."""
+    user = session.exec(select(User).where(User.username == form_data.username)).first()
+    print("USER FOUND:", user)
+    if not user or not verify_password(form_data.password, user.password or ""):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account is disabled",
+        )
+    
+    role_names = [role.name for role in user.roles]
+    permissions = get_user_permissions(user)
+    
+    """Create JWT access Token"""
+
+    token_data = {
+        "sub": str(user.id),
+        "username": user.username,
+        "roles": role_names,
+        "permissions": permissions
+    }
+    access_token = create_access_token(data=token_data, expires_delta=timedelta(days=30))
+    
+    return schemas.TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user_id=user.id,
+        username=user.username,
+        email=user.email,
+        roles=role_names,
+        permissions=permissions
+    )
+
 @router.post("/register", response_model=schemas.UserReadWithRoles)
 def register(
     user_data: schemas.UserCreate, 
@@ -124,7 +165,9 @@ def register(
             detail="Username already exists",
         )
     
-    default_role = session.exec(select(Role).where(Role.name == "Viewer")).first()
+    default_role = session.exec(select(Role).where(Role.name == "Admin")).first()
+
+    print("DEFAULT ROLE:", default_role)
     
     if not default_role:
         raise HTTPException(
@@ -140,7 +183,6 @@ def register(
         is_active=True,
         password=hashed_password
     )
-    print("REGISTERING USER:", db_user)
     db_user.roles = [default_role]
     session.add(db_user)
     session.commit()

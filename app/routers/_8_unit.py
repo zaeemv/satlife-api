@@ -20,8 +20,7 @@ def create_unit(unit: schemas.UnitCreate, session: Session = Depends(get_session
     db_unit = Unit(**unit.model_dump())
     session.add(db_unit)
     session.flush()
-
-# Create
+    db_unit.serial_number = "Unit-" + str(db_unit.serial_number)+ "-"+ str(db_unit.id)
 #    1.  Entity status
 #    2.  Entity Status History
 # --------------------------------------------------------------------------------------------------------------------------------------------
@@ -74,7 +73,7 @@ def update_unit(unit_id: int, unit: schemas.UnitUpdate, session: Session = Depen
 
 # Update Entity status and Create Entity Status History
 # --------------------------------------------------------------------------------------------------------------------------------------------
-    update_entity_status(session=session, entity= db_unit, entity_name = entity_config["display_name"], current_user=current_user)
+    update_entity_status(session=session, entity= db_unit, entity_name = entity_config["display_name"])
 
     session.commit()
     session.refresh(db_unit)

@@ -166,6 +166,7 @@ class EntityType(str, Enum):
     ORDER     = "order"        
     CUSTOMER  = "customer"     
 
+
 class CaseStatus(str, Enum):
     OPEN             = "open"
     UNDER_INSPECTION = "under_inspection"
@@ -180,19 +181,26 @@ class FaultType(str, Enum):
     WEAR                 = "wear"
     MANUFACTURING_DEFECT = "manufacturing_defect"
     UNCLASSIFIED         = "unclassified"
+    SUSPECTED            = "suspected"
+
 
 class FaultyEntityStatus(str, Enum):
     IDENTIFIED       = "identified"
+    SUSPECTED        = "suspected"
     UNDER_INSPECTION = "under_inspection"
     CONFIRMED_FAULTY = "confirmed_faulty"
+    HEALTHY          = "healthy"
     RESOLVED         = "resolved"
     NO_FAULT_FOUND   = "no_fault_found"
+    FALSEPOSITIVE = 'false_positive'
+
 
 class ResolutionType(str, Enum):
     REPAIRED       = "repaired"
     REPLACED       = "replaced"
     NO_FAULT_FOUND = "no_fault_found"
     DECOMMISSIONED = "decommissioned"
+    CLEAR = "clear"
 
 class ActionType(str, Enum):
     INSPECTION    = "inspection"
@@ -232,13 +240,18 @@ class MaintenanceCaseCommon(SQLModel):
     description:      str
     status:           CaseStatus  = CaseStatus.OPEN
     resolution_notes: Optional[str] = None
+    entity_id: Optional[int] = None
+    entity_type: Optional[str] = None
+    part_number: Optional[str] = None
+    resolved_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] =Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MaintenanceCaseBase(MaintenanceCaseCommon):
     """Adds server-side timestamps."""
-    reported_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    reported_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     closed_at: Optional[datetime] = None
+    project_name: Optional[str] = None
 
 # =============================================================================
 # 2. FAULTY ENTITY
@@ -260,10 +273,19 @@ class FaultyEntityCommon(SQLModel):
 
 class FaultyEntityBase(FaultyEntityCommon):
     """Adds server-side timestamps."""
-    identified_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
+    identified_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     resolved_at: Optional[datetime] = None
+    entity_name: Optional[str] = None
+    part_number: Optional[str] = None
+    serial_number: Optional[str] = None
+    parent_entity_id: Optional[int]
+    parent_entity_type: Optional[EntityType]
+    parent_entity_name: Optional[str] = None
+    confirmed_at: Optional[str] = None
+    investigation_notes: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+        
 
 
 # =============================================================================

@@ -28,7 +28,7 @@ oauth2_scheme:OAuth2PasswordBearer = OAuth2PasswordBearer(tokenUrl="/api/auth/lo
 
 def get_current_user(token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)) -> User:
     """Dependency to get current authenticated user from token."""
-    print("TOKEN RECEIVED:", token)
+    # print("TOKEN RECEIVED:", token)
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -330,22 +330,6 @@ def remove_role_from_user(
         "user_id": target_user.id,
         "role_id": role.id
     }
-
-@router.delete("/deregister/{user_id}")
-def deregister_user(
-    user_id: int,
-    user: User = Depends(require_role("Admin")),
-    session: Session = Depends(get_session)
-):
-    """Deregister (delete) a user by id. Requires Admin role."""
-    target_user = session.get(User, user_id)
-    if not target_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if target_user.id == user.id:
-        raise HTTPException(status_code=400, detail="Admin cannot deregister themselves")
-    session.delete(target_user)
-    session.commit()
-    return {"message": f"User '{target_user.username}' deregistered successfully", "user_id": user_id}
 
 # ==================== CURRENT USER INFO ====================
 @router.get("/me", response_model=schemas.UserReadWithRoles)

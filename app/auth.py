@@ -47,11 +47,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 # ==================== USER RETRIEVAL ====================
 def get_user_from_token(token: str, session: Session):
     """Get user object from JWT token."""
-    print("Getting user from token:", token)
+    # print("Getting user from token:", token)
     from app.models.tables import User
     payload = decode_token(token)
     user_id = payload.get("sub")
-    print("USER ID FROM TOKEN:", user_id)
+    # print("USER ID FROM TOKEN:", user_id)
     
     user = session.get(User, user_id)
     if not user:
@@ -64,14 +64,14 @@ def get_user_from_token(token: str, session: Session):
 # ==================== DECODE TOKEN ====================
 def decode_token(token: str) -> dict:
     """Decode and validate a JWT token."""
-    print("compiler reached in decode_token")
+    # print("compiler reached in decode_token")
 
     try:
-        print("compiler reached in Try statement")
+        # print("compiler reached in Try statement")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print("DECODED PAYLOAD:", payload)
+        # print("DECODED PAYLOAD:", payload)
         user_id = payload.get("sub")
-        print("USER ID FROM PAYLOAD:", user_id)  
+        # print("USER ID FROM PAYLOAD:", user_id)  
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -271,7 +271,7 @@ DEFAULT_ROLES = [
             # Status
             "view_statuses", "view_status_history",
             # Hierarchy
-            "view_hierarchy", "create_hierarchy", "edit_hierarchy"
+            "view_hierarchy", "create_hierarchy", "edit_hierarchy",
 
             # Maintenance Cases
             "view_maintenance_cases",
@@ -482,6 +482,7 @@ def initialize_roles_and_permissions(session: Session):
     
     for role_data in DEFAULT_ROLES:
         role = Role(name=role_data["name"], description=role_data["description"])
+        print(role_data["permissions"])
         role.permissions = [permission_map[perm_name] for perm_name in role_data["permissions"]]
         session.add(role)
     

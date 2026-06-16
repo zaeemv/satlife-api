@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Field
+from pydantic import ConfigDict
 from app.models.base import (MaintenanceCaseBase, FaultyEntityBase, MaintenanceActionBase, MaintenanceDeliveryBase)
 from typing import List, Optional
 from app.models.base import EntityType, FaultType, CaseStatus, FaultyEntityStatus, ResolutionType, ActionOutcome, DeliveryStatus
@@ -11,17 +12,25 @@ from datetime import datetime
 
 class AncestorNode(SQLModel):
     """One level in the upward ancestry chain."""
-    entity_type: str
-    entity_id:   int
-    label:       Optional[str] = None   # human-readable name / PN
+    entity_type:             str # like Project, System, Subsystem, Module, Unit, Component
+    entity_id:               int
+    entity_name:             Optional[str]= None   # like SDLS1 (System), AOCS (subsystem), or TMTC (Module) or FPGA Card (unit), Rectifier (component)
+    entity_PartNumber:       Optional[str] = None   # human-readable name / PN
+    entity_SerialNumber:     Optional[str] = None
 
 class DescendantNode(SQLModel):
     """One entity in the downward subtree."""
-    entity_type: str
-    entity_id:   int
-    label:       Optional[str] = None
-    depth:       int = 0                # 0 = the entity itself, 1 = direct child, …
-
+    entity_type:             str # like Project, System, Subsystem, Module, Unit, Component
+    entity_id:               int
+    entity_name:             Optional[str] = None   # like SDLS1 (System), AOCS (subsystem), or TMTC (Module) or FPGA Card (unit), Rectifier (component)
+    entity_PartNumber:       Optional[str] = None   # human-readable name / PN
+    entity_SerialNumber:     Optional[str] = None
+    parent_ID:               Optional[int] = None   # immediate parent in the hierarchy (None for the matched entity itself)
+    parent_type:             Optional[EntityType] = None
+    parent_name:             Optional[str] = None   # for FE label; optional but saves a lookup
+    depth:                   int = 0                # 0 = the entity itself, 1 = direct child, …
+    hierarchy_parent_entity_id: Optional[int] = None
+    hierarchy_parent_entity_type: Optional[EntityType] = None
 class EntityLookupRead(SQLModel):
     """
     Response for GET /entities/lookup-by-PN/{PN}/
@@ -31,6 +40,9 @@ class EntityLookupRead(SQLModel):
     matched_entity_type: str
     matched_entity_id:   int
     matched_label:       Optional[str] = None
+    matched_entity_serialNumber : Optional[str] = None
+    matched_entity_PartNumber : Optional[str] = None
+
 
     # Upward chain — ordered from the matched entity to Customer
     ancestors: List[AncestorNode] = []
@@ -46,6 +58,8 @@ class EntityLookupRead(SQLModel):
     customer_id:   Optional[int] = None
     customer_name: Optional[str] = None
 
+
+
 class SuspectChildrenPayload(SQLModel):
     """
     POST /maintenance-cases/{case_id}/suspect-children/
@@ -56,6 +70,9 @@ class SuspectChildrenPayload(SQLModel):
     entity_id:         int
     fault_type:        FaultType       = FaultType.UNCLASSIFIED
     fault_description: Optional[str]   = None
+    entity_name:       Optional[str]   = None  # for FE label; optional but saves a lookup
+    serial_number:     Optional[str]   = None
+    part_number:       Optional[str]   = None
 
 class SuspectChildrenRead(SQLModel):
     """Response for the suspect-children endpoint."""
@@ -102,6 +119,8 @@ class MaintenanceCaseCreate(MaintenanceCaseBase):
     """
     project_id:  int
     reported_by: Optional[int] = None
+    project_name:     Optional[str]                 = None
+
 
 class MaintenanceCaseRead(MaintenanceCaseBase):
     """
@@ -115,8 +134,7 @@ class MaintenanceCaseRead(MaintenanceCaseBase):
     faulty_entities:  List["FaultyEntityRead"]       = []
     deliveries:       List["MaintenanceDeliveryRead"] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MaintenanceCaseUpdate(SQLModel):
     """
@@ -156,8 +174,7 @@ class FaultyEntityRead(FaultyEntityBase):
     parent_faulty_entity_id: Optional[int]                = None
     actions:                 List["MaintenanceActionRead"] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FaultyEntityUpdate(SQLModel):
     """
@@ -211,8 +228,7 @@ class MaintenanceActionRead(MaintenanceActionBase):
     replacement_entity_id:   Optional[int]     = None
     replacement_entity_type: Optional[EntityType] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MaintenanceActionUpdate(SQLModel):
     """PUT /maintenance-actions/{id}/"""
@@ -244,8 +260,7 @@ class MaintenanceDeliveryRead(MaintenanceDeliveryBase):
     delivered_by_user: Optional[UserRead] = None
     created_at:        datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MaintenanceDeliveryUpdate(SQLModel):
     """PUT /maintenance-deliveries/{id}/"""

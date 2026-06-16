@@ -3,15 +3,14 @@ from app.database import init_db, close_db, engine
 from sqlmodel import Session
 from contextlib import asynccontextmanager
 from app.routers import router
-from app.auth import initialize_roles_and_permissions, sync_roles_and_permissions
+from app.auth import initialize_roles_and_permissions
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     # Initialize default roles and permissions
     with Session(engine) as session:
-        # initialize_roles_and_permissions(session)
-        sync_roles_and_permissions(session)
+        initialize_roles_and_permissions(session)
     try:
         yield
     finally:
@@ -36,14 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://localhost:3000"],  # Next.js
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],``
-# )
 app.include_router(router, prefix="/api")
 
 @app.get("/")

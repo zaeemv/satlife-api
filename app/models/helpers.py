@@ -4,22 +4,47 @@
 from typing import List, Optional
 from sqlmodel import Session, select
 from app.database import get_session
+from app.routers import entity
 from app.schemas.Maintennance import (AncestorNode, DescendantNode, FaultType, FaultyEntityStatus)
 from app.models.tables import FaultyEntity,MaintenanceCase, Component, Unit, Module, Subsystem, System, Project, Order, Customer
 from app.models.base import( EntityType )
 from datetime import datetime, timezone
 
 
-def _get_label(session: Session, entity_type: str, entity_id: int) -> Optional[str]:
+def _get_label(session: Session, entity_type: str, entity_id: int) -> Optional[dict]:
     """Return the human-readable label for any entity."""
     entry = _ENTITY_MODEL_MAP.get(entity_type)
     if not entry:
         return None
     model_cls, _, label_attr = entry
     row = session.get(model_cls, entity_id)
+    # print("------------_get_label---------------", row, label_attr)
     if not row or not label_attr:
         return None
-    return str(getattr(row, label_attr, None))
+    if entity_type != EntityType.CUSTOMER and entity_type != EntityType.ORDER:
+        return {
+            "part_number": str(getattr(row, label_attr, None)),
+            "entity_name": str(getattr(row, "name", None)),
+            "serial_number": str(getattr(row, "id", None) if entity_type == EntityType.PROJECT else str(getattr(row, "serial_number", None))),
+            }
+    elif entity_type == EntityType.CUSTOMER:
+        return {
+            "part_number": str(getattr(row, "id", None)),
+            "entity_name": str(getattr(row, "name", None)),
+            "serial_number": str(getattr(row, "id", None)),
+            }
+    elif entity_type == EntityType.ORDER:
+        return {
+            "part_number": str(getattr(row, "id", None)),
+            "entity_name": str(getattr(row, "order_number", None)),
+            "serial_number": str(getattr(row, "id", None)),
+            }
+    else:
+        return {
+                "part_number": "default",
+                "entity_name": "default",
+                "serial_number": "default",
+                }
 
 def _resolve_ancestors(session: Session, entity_type: str,entity_id: int) -> List[AncestorNode]:
     """
@@ -32,6 +57,7 @@ def _resolve_ancestors(session: Session, entity_type: str,entity_id: int) -> Lis
     current_id   = entity_id
 
     while current_type in _EXTENDED_PARENT_MAP:
+
         parent_type, model_cls, fk_attr = _EXTENDED_PARENT_MAP[current_type]
         row = session.get(model_cls, current_id)
         if not row:
@@ -39,9 +65,11 @@ def _resolve_ancestors(session: Session, entity_type: str,entity_id: int) -> Lis
         parent_id = getattr(row, fk_attr, None)
         if parent_id is None:
             break
-        label = _get_label(session, parent_type, parent_id)
+        info:dict = _get_label(session, parent_type, parent_id)
+        print("------------info---------------", parent_type, info)
+
         ancestors.append(
-            AncestorNode(entity_type=parent_type, entity_id=parent_id, label=label)
+            AncestorNode(entity_type=parent_type, entity_id=parent_id, entity_name = info["entity_name"], entity_PartNumber=info["part_number"], entity_SerialNumber=info["serial_number"])
         )
         current_type = parent_type
         current_id   = parent_id
@@ -63,6 +91,7 @@ def _collect_descendants(
         return result                          # leaf node — no children
 
     child_type, child_model, fk_attr = _CHILD_MAP[entity_type]
+# EntityType.UNIT:      (EntityType.COMPONENT, Component, "unit_id"),
 
     # Query all children whose FK matches entity_id
     children = session.exec(
@@ -71,12 +100,18 @@ def _collect_descendants(
 
     for child in children:
         child_id = child.id
-        label    = _get_label(session, child_type, child_id)
+        child_info = _get_label(session, child_type, child_id)
+        parent_info = _get_label(session, entity_type, entity_id)
         result.append(
             DescendantNode(
                 entity_type=child_type,
                 entity_id=child_id,
-                label=label,
+                entity_name=child_info["entity_name"],
+                entity_PartNumber=child_info["part_number"],
+                entity_SerialNumber=child_info["serial_number"],
+                parent_ID=entity_id,
+                parent_type=entity_type,
+                parent_name=parent_info["entity_name"] if parent_info else None,
                 depth=depth + 1,
             )
         )
@@ -99,16 +134,24 @@ def _create_suspect_fes(
     Returns the created rows.
     """
     created: List[FaultyEntity] = []
+
     for desc in descendants:
         fe = FaultyEntity(
             case_id=case_id,
             entity_type=desc.entity_type,
             entity_id=desc.entity_id,
+            entity_name= desc.entity_name,
+            part_number = desc.entity_PartNumber,
+            serial_number= desc.entity_SerialNumber,
             fault_type=fault_type,
-            fault_description=f"Suspected — under inspection (parent hierarchy flagged)",
             status=FaultyEntityStatus.UNDER_INSPECTION,
-            parent_faulty_entity_id=parent_faulty_entity_id,
+            fault_description=f"Suspected — under inspection (parent hierarchy flagged)",
             identified_by=identified_by,
+            parent_faulty_entity_id=parent_faulty_entity_id,
+            parent_entity_id=desc.parent_ID, 
+            parent_entity_type=desc.parent_type,
+            depth = desc.depth,
+
         )
         session.add(fe)
         created.append(fe)
@@ -286,16 +329,15 @@ _ENTITY_MODEL_MAP: Dict[str, Tuple[Any, str, Optional[str]]] = {
     EntityType.SUBSYSTEM: (Subsystem, "id", "part_number"),
     EntityType.SYSTEM:    (System,    "id", "part_number"),
     EntityType.PROJECT:   (Project,   "id", "name"),
-    # Add ORDER and CUSTOMER if your models support them:
-    # EntityType.ORDER:    (OrderDetail, "id", "reference_number"),
-    # EntityType.CUSTOMER: (Customer,    "id", "name"),
+    EntityType.ORDER:     (Order,     "id", "order_number"),
+    EntityType.CUSTOMER:  (Customer,  "id", "name"),
 }
 
 # Parent map extended upward beyond Project (Project → Order → Customer).
 # Add your actual FK attribute names.
 _EXTENDED_PARENT_MAP: Dict[str, Tuple[str, Any, str]] = {
     **_PARENT_MAP,
-    EntityType.PROJECT:  (EntityType.ORDER,    Project,     "order_detail_id"),
+    EntityType.PROJECT:  (EntityType.ORDER,    Project,     "order_id"),
     EntityType.ORDER:    (EntityType.CUSTOMER, Order, "customer_id"),
 }
 
@@ -322,11 +364,21 @@ def _generate_case_number(session: Session) -> str:
     """
     year = datetime.now(timezone.utc).year
     prefix = f"MC-{year}-"
-    existing = session.exec(
-        select(MaintenanceCase).where(
-            MaintenanceCase.case_number.startswith(prefix)
-        )
-    ).all()
-    return f"{prefix}{str(len(existing) + 1).zfill(4)}"
+
+    latest_case = session.exec(select(MaintenanceCase).order_by(MaintenanceCase.id.desc())).first()
+    
+    if latest_case:
+        next_id = latest_case.id + 1
+    else:
+        next_id = 1
+    case_number = f"MC-{year}-{next_id:04d}"
+
+    # existing = session.exec(
+    #     select(MaintenanceCase).where(
+    #         MaintenanceCase.case_number.startswith(prefix)
+    #     )
+    # ).all()
+    # return f"{prefix}{str(len(existing) + 1).zfill(4)}"
+    return case_number
 
 # # ====================================

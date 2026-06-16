@@ -68,21 +68,6 @@ def get_user(user_id: int, session: Session = Depends(get_session), current_user
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.get("/users/with-roles", tags=["users"])
-def list_users_with_roles(session: Session = Depends(get_session)):
-    users = session.exec(select(User)).all()
-
-    return [
-        {
-            "id": u.id,
-            "username": u.username,
-            "full_name": u.full_name,
-            "email": u.email,
-            "roles": [r.name for r in u.roles],
-        }
-        for u in users
-    ]
-
 @router.put("/users/{user_id}/", response_model=schemas.UserRead, tags=["users"])
 def update_user(user_id: int, user: schemas.UserUpdate, session: Session = Depends(get_session), current_user: User = Depends(require_permission("edit_users"))):
     db_user = session.get(User, user_id)
@@ -120,25 +105,4 @@ def list_user_projects(user_id: int, session: Session = Depends(get_session), cu
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user.projects
-
-
-@router.get(
-    "/users/{user_id}/roles/",
-    response_model=List[schemas.RoleRead],
-    tags=["users"]
-)
-def list_user_roles(
-    user_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(require_permission("view_users"))
-):
-    user = session.get(User, user_id)
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    return user.roles
 

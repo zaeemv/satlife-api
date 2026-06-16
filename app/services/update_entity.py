@@ -1,7 +1,7 @@
 # 2️⃣ Service: Update Entity Status
 # This updates current status in the entity table.
 
-from app.models.tables import (Entity, User)
+from app.models.tables import (Entity)
 from sqlmodel import Session, select
 from typing import Optional
 from fastapi import HTTPException
@@ -10,7 +10,7 @@ from app.schemas import schemas
 
 
 
-def update_entity_status(session: Session, entity:any, entity_name: Optional[str], current_user: User):
+def update_entity_status(session: Session, entity:any, entity_name: Optional[str]):
 
     updated_entity = session.exec(
         select(Entity).where(
@@ -32,7 +32,7 @@ def update_entity_status(session: Session, entity:any, entity_name: Optional[str
         history_data=schemas.EntityStatusHistoryCreate(
             entity_id=updated_entity.id,
             status_id=updated_entity.status_id,
-            changed_by=current_user.id if current_user else None,
+            changed_by=5
         )
     )
     return updated_entity

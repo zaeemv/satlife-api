@@ -145,9 +145,15 @@ class MaintenanceLogBase(MaintenanceLogCommon):
     performed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class InventoryCommon(SQLModel):
-    component_id: int
+    name: str
+    inventory_type: str  # 'system', 'subsystem', 'module', 'unit', 'component'
+    serial_number: Optional[str] = None
     quantity: int = 0
+    description: Optional[str] = None
+    oem_name: Optional[str] = None
+    manufacturer_part_number: Optional[str] = None
     location: Optional[str] = None
+    entity_id: Optional[int] = None  # ID of the associated entity (system_id, subsystem_id, etc.)
 
 class InventoryBase(InventoryCommon):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))   
@@ -173,6 +179,13 @@ class CaseStatus(str, Enum):
     UNDER_REPAIR     = "under_repair"
     RESOLVED         = "resolved"
     CLOSED           = "closed"
+
+class InventoryType(str, Enum):
+    SYSTEM    = "system"
+    SUBSYSTEM = "subsystem"
+    MODULE    = "module"
+    UNIT      = "unit"
+    COMPONENT = "component"
 
 class FaultType(str, Enum):
     HARDWARE             = "hardware"

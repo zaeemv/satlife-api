@@ -111,7 +111,6 @@ class Component(ComponentBase, table=True):
     status_id: Optional[int] = Field(default=None, foreign_key="status.id")
     unit: Optional[Unit] = Relationship(back_populates="components")
     status: Optional[Status] = Relationship(back_populates="components")
-    inventory_items: List["Inventory"] = Relationship(back_populates="component")
 
 class Entity(EntityBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -138,8 +137,7 @@ class EntityStatusHistory(EntityStatusHistoryBase, table=True):
 
 class Inventory(InventoryBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    component_id: int = Field(foreign_key="component.id")
-    component: Optional[Component] = Relationship(back_populates="inventory_items")
+    entity_id: Optional[int] = Field(default=None, index=True)
 
 class MaintenanceCase(MaintenanceCaseBase, table=True):
     """

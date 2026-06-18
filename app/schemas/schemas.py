@@ -249,7 +249,6 @@ class ComponentRead(ComponentBase):
     unit_id: Optional[int] = None
     status_id: Optional[int] = None
     status_name: Optional[str] = None
-    inventory_items: Optional[List["InventoryRead"]] = None
 
     class Config:
         orm_mode = True

@@ -1,6 +1,3 @@
-# ✅ Swagger-Ready Status Data (All Entities)
-
-
 [
   {"name": "Active", "description": "User is active and can access system", "status_type": "users", "created_at": "2026-05-01T16:57:24.857Z"},
   {"name": "Inactive", "description": "User is disabled", "status_type": "users", "created_at": "2026-05-01T16:57:24.857Z"},

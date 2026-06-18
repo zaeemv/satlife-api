@@ -35,7 +35,6 @@ def create_component(component: schemas.ComponentCreate, session: Session = Depe
     return schemas.ComponentRead(
         **db_component.model_dump(),
         status_name=status_name,
-        inventory_items=db_component.inventory_items
     )
 
 @router.get("/components/", response_model=List[schemas.ComponentRead], tags=["components"])
@@ -47,7 +46,6 @@ def list_components(skip: int = 0, limit: int = 100, session: Session = Depends(
         result.append(schemas.ComponentRead(
             **component.model_dump(),
             status_name=status_name,
-            inventory_items=component.inventory_items
         ))
     return result
 
@@ -60,7 +58,6 @@ def get_component(component_id: int, session: Session = Depends(get_session), cu
     return schemas.ComponentRead(
         **component.model_dump(),
         status_name=status_name,
-        inventory_items=component.inventory_items
     )
 
 @router.put("/components/{component_id}/", response_model=schemas.ComponentRead, tags=["components"])
@@ -83,7 +80,6 @@ def update_component(component_id: int, component: schemas.ComponentUpdate, sess
     return schemas.ComponentRead(
         **db_component.model_dump(),
         status_name=status_name,
-        inventory_items=db_component.inventory_items
     )
 
 @router.delete("/components/{component_id}/", tags=["components"])
@@ -95,9 +91,4 @@ def delete_component(component_id: int, session: Session = Depends(get_session),
     session.commit()
     return {"ok": True}
 
-@router.get("/components/{component_id}/inventory/", response_model=List[schemas.InventoryRead], tags=["components"])
-def list_component_inventory(component_id: int, session: Session = Depends(get_session), current_user: User = Depends(require_permission("view_components"))):
-    component = session.get(Component, component_id)
-    if not component:
-        raise HTTPException(status_code=404, detail="Component not found")
-    return component.inventory_items
+

@@ -4,7 +4,6 @@
 from typing import List, Optional
 from sqlmodel import Session, select
 from app.database import get_session
-from app.routers import entity
 from app.schemas.Maintennance import (AncestorNode, DescendantNode, FaultType, FaultyEntityStatus)
 from app.models.tables import FaultyEntity,MaintenanceCase, Component, Unit, Module, Subsystem, System, Project, Order, Customer
 from app.models.base import( EntityType )
@@ -366,19 +365,45 @@ def _generate_case_number(session: Session) -> str:
     prefix = f"MC-{year}-"
 
     latest_case = session.exec(select(MaintenanceCase).order_by(MaintenanceCase.id.desc())).first()
-    
     if latest_case:
         next_id = latest_case.id + 1
     else:
         next_id = 1
+
     case_number = f"MC-{year}-{next_id:04d}"
 
-    # existing = session.exec(
-    #     select(MaintenanceCase).where(
-    #         MaintenanceCase.case_number.startswith(prefix)
-    #     )
-    # ).all()
-    # return f"{prefix}{str(len(existing) + 1).zfill(4)}"
     return case_number
 
+year = datetime.now(timezone.utc).year
+
+from app.models.tables import * 
+ENTITY_PREFIXES = {
+    
+    Customer: "CUST",
+    Order: f"ORD-{year}",
+    Project: "PROJ",
+    MaintenanceCase: "MC",
+    System: "SYS",
+    Subsystem: "SUB",
+    Module: "MOD",
+    Unit: "UNIT",
+    Component: "COMP",
+}
+
 # # ====================================
+def _generate_Entity_Code(session: Session, model) -> str:
+    """
+    Produces sequential, year-scoped case numbers: MC-2024-0001
+    Guaranteed unique within the year by counting existing cases.
+    """
+    prefix = ENTITY_PREFIXES[model]
+    print("prefix",prefix)
+
+    latest_case = session.exec(select(model).order_by(model.id.desc())).first()
+    print("latest_case",latest_case)
+    if latest_case:
+        entity_code = latest_case.id + 1
+    else:
+        entity_code = 1
+
+    return f"{prefix}-{entity_code:03d}"

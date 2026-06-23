@@ -1,7 +1,8 @@
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
 from enum import Enum
+from decimal import Decimal
 
 # Base models for all entities, defining common fields and structure
 
@@ -28,6 +29,7 @@ class ProjectCommon(SQLModel):
     owner_id: int
     order_id: int = None
     status_id: Optional[int] = None
+    progress: int = Field(default=0, ge=0, le=100)
 
 class ProjectBase(ProjectCommon):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -35,13 +37,31 @@ class ProjectBase(ProjectCommon):
 
 class CustomerCommon(SQLModel):
     name: str
-    contact_info: Optional[str] = None
+
+    organization_type: Optional[str] = None
+
+    primary_contact_name: Optional[str] = None
+    designation: Optional[str] = None
+
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+
+    address: Optional[str] = None
+    country: Optional[str] = None
+
+    notes: Optional[str] = None
+
+    created_by: Optional[int] = None
+
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class CustomerBase(CustomerCommon):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class StatusCommon(SQLModel):
-    name: str
+    status_name: str
     description: Optional[str] = None
     status_type: Optional[str] = None
     
@@ -59,8 +79,23 @@ class HierarchyBase(HierarchyCommon):
 
 class OrderCommon(SQLModel):
     customer_id: int
-    order_number: Optional[str] = None
+
+    order_number: str = Field(index=True, unique=True)
+    title: str
+    description: Optional[str] = None
+    contract_number: Optional[str] = None
+    po_number: Optional[str] = None
+    order_date: date
+    delivery_date: Optional[date] = None
+
+    total_value: Optional[Decimal] = None
+    currency: str = "PKR"
+
     status_id: Optional[int] = None
+
+    project_manager: Optional[str] = None
+
+    remarks: Optional[str] = None
 
 class OrderBase(OrderCommon):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -159,9 +194,6 @@ class InventoryBase(InventoryCommon):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))   
 
 
-
-
-
 class EntityType(str, Enum):
     PROJECT   = "project"
     SYSTEM    = "system"
@@ -194,7 +226,10 @@ class FaultType(str, Enum):
     WEAR                 = "wear"
     MANUFACTURING_DEFECT = "manufacturing_defect"
     UNCLASSIFIED         = "unclassified"
-    SUSPECTED            = "suspected"
+    ELECTRICAL           = 'electrical'
+    MECHANICAL           = 'mechanical'
+    ENVIRONMENTAL        = 'environmental'
+    OTHER                = 'other'
 
 
 class FaultyEntityStatus(str, Enum):
@@ -205,7 +240,7 @@ class FaultyEntityStatus(str, Enum):
     HEALTHY          = "healthy"
     RESOLVED         = "resolved"
     NO_FAULT_FOUND   = "no_fault_found"
-    FALSEPOSITIVE = 'false_positive'
+    FALSEPOSITIVE    = 'false_positive'
 
 
 class ResolutionType(str, Enum):
@@ -213,7 +248,7 @@ class ResolutionType(str, Enum):
     REPLACED       = "replaced"
     NO_FAULT_FOUND = "no_fault_found"
     DECOMMISSIONED = "decommissioned"
-    CLEAR = "clear"
+    CLEAR          = "clear"
 
 class ActionType(str, Enum):
     INSPECTION    = "inspection"
@@ -256,6 +291,7 @@ class MaintenanceCaseCommon(SQLModel):
     entity_id: Optional[int] = None
     entity_type: Optional[str] = None
     part_number: Optional[str] = None
+    status_id: Optional[int]= None
     resolved_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] =Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -281,6 +317,7 @@ class FaultyEntityCommon(SQLModel):
     entity_id:         int
     fault_type:        FaultType          = FaultType.UNCLASSIFIED
     fault_description: Optional[str]      = None
+    status_id: Optional[int]= None
     status:            FaultyEntityStatus = FaultyEntityStatus.IDENTIFIED
     resolution_type:   Optional[ResolutionType] = None
 
@@ -316,10 +353,14 @@ class MaintenanceActionCommon(SQLModel):
     # Populated only when action_type == ActionType.REPLACEMENT
     replacement_entity_id:   Optional[int]      = None
     replacement_entity_type: Optional[EntityType] = None
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+
 
 class MaintenanceActionBase(MaintenanceActionCommon):
-    performed_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+    performed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc)
     )
 
 # =============================================================================
@@ -335,6 +376,7 @@ class MaintenanceActionBase(MaintenanceActionCommon):
 class MaintenanceDeliveryCommon(SQLModel):
     delivery_type: DeliveryType   = DeliveryType.RE_DELIVERY
     status:        DeliveryStatus = DeliveryStatus.PENDING
+    status_id: Optional[int]= None
     received_by:   Optional[str]  = Field(
         default=None,
         description="Customer contact name or signature reference."
@@ -343,6 +385,65 @@ class MaintenanceDeliveryCommon(SQLModel):
 
 class MaintenanceDeliveryBase(MaintenanceDeliveryCommon):
     delivered_at: Optional[datetime] = None
+
+
+class ConfigurationHistoryBase(SQLModel):
+
+    entity_id: int = Field(foreign_key="entity.id", ondelete="CASCADE")
+
+    maintenance_case_id: Optional[int] = Field(default=None,foreign_key="maintenance_case.id", ondelete="CASCADE"    )
+
+    performed_by: int = Field(
+        foreign_key="user.id"
+    )
+
+    approved_by: Optional[int] = Field(
+        default=None,
+        foreign_key="user.id"
+    )
+
+    verified_by: Optional[int] = Field(
+        default=None,
+        foreign_key="user.id"
+    )
+
+    change_date: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+
+    installation_date: Optional[datetime] = None
+
+    removal_date: Optional[datetime] = None
+
+    fault_type: Optional[FaultType] = None
+
+    resolution_type: ResolutionType
+
+    old_part_number: Optional[str] = None
+    new_part_number: Optional[str] = None
+
+    old_serial_number: Optional[str] = None
+    new_serial_number: Optional[str] = None
+
+    old_revision: Optional[str] = None
+    new_revision: Optional[str] = None
+
+    old_batch_number: Optional[str] = None
+    new_batch_number: Optional[str] = None
+
+    operating_hours: Optional[float] = None
+
+    operating_cycles: Optional[int] = None
+
+    work_order_number: Optional[str] = None
+
+    reason: Optional[str] = None
+
+    corrective_action: Optional[str] = None
+
+    remarks: Optional[str] = None
+
+
 
 # ===== AUTHENTICATION & AUTHORIZATION MODELS =====
 class PermissionCommon(SQLModel):

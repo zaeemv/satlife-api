@@ -9,6 +9,7 @@ from app.services.create_entitystatusHistory import create_status_history
 from app.services.update_entity import update_entity_status
 from app.config.entities import ENTITY_CONFIG
 from app.routers.auth import require_permission
+from app.models.helpers import _generate_Entity_Code
 
 entity_config = ENTITY_CONFIG.get("order")
 
@@ -18,6 +19,7 @@ router = APIRouter()
 @router.post("/orders/", response_model=schemas.OrderRead, tags=["orders"])
 def create_order(order: schemas.OrderCreate, session: Session = Depends(get_session), current_user: User = Depends(require_permission("create_orders"))):
     db_order = Order(**order.model_dump())
+    db_order.order_number = _generate_Entity_Code(session, Order)
     session.add(db_order)
     session.flush()
 
@@ -28,7 +30,7 @@ def create_order(order: schemas.OrderCreate, session: Session = Depends(get_sess
     session.commit()
     session.refresh(db_order)
     # Attach status_name for response
-    status_name = db_order.status.name if db_order.status else None
+    status_name = db_order.status.status_name if db_order.status else None
     return schemas.OrderRead(
         **db_order.model_dump(),
         status_name=status_name,
@@ -40,7 +42,7 @@ def list_orders(skip: int = 0, limit: int = 100, session: Session = Depends(get_
     orders = session.exec(select(Order).offset(skip).limit(limit)).all()
     result = []
     for order in orders:
-        status_name = order.status.name if order.status else None
+        status_name = order.status.status_name if order.status else None
         result.append(schemas.OrderRead(
             **order.model_dump(),
             status_name=status_name,
@@ -53,7 +55,7 @@ def get_order(order_id: int, session: Session = Depends(get_session), current_us
     order = session.get(Order, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    status_name = order.status.name if order.status else None
+    status_name = order.status.status_name if order.status else None
     return schemas.OrderRead(
         **order.model_dump(),
         status_name=status_name,
@@ -72,11 +74,11 @@ def update_order(order_id: int, order: schemas.OrderUpdate, session: Session = D
 
 # Update Entity status and Create Entity Status History
 # --------------------------------------------------------------------------------------------------------------------------------------------
-    update_entity_status(session=session, entity= db_order, entity_name = entity_config["display_name"])
+    update_entity_status(session=session, entity= db_order, entity_name = entity_config["display_name"],changed_by_user= current_user.id)
 # --------------------------------------------------------------------------------------------------------------------------------------------
     session.commit()
     session.refresh(db_order)
-    status_name = db_order.status.name if db_order.status else None
+    status_name = db_order.status.status_name if db_order.status else None
     return schemas.OrderRead(
         **db_order.model_dump(),
         status_name=status_name,

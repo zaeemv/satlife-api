@@ -10,7 +10,7 @@ from app.schemas import schemas
 
 
 
-def update_entity_status(session: Session, entity:any, entity_name: Optional[str]):
+def update_entity_status(session: Session, entity:any, entity_name: Optional[str], changed_by_user: int):
 
     updated_entity = session.exec(
         select(Entity).where(
@@ -21,18 +21,19 @@ def update_entity_status(session: Session, entity:any, entity_name: Optional[str
     if not entity:
         raise HTTPException(status_code=404, detail = "Entity Record not found")
         return None
-
+    print("updated_entity",updated_entity)
     updated_entity.status_id = entity.status_id
 
     session.add(updated_entity)
     session.flush()
 
-    create_status_history(
-        session=session,
-        history_data=schemas.EntityStatusHistoryCreate(
-            entity_id=updated_entity.id,
-            status_id=updated_entity.status_id,
-            changed_by=5
+    if entity.status_id is not None:
+        create_status_history(
+            session=session,
+            history_data=schemas.EntityStatusHistoryCreate(
+                entity_id=updated_entity.id,
+                status_id=updated_entity.status_id,
+                changed_by=changed_by_user
+            )
         )
-    )
     return updated_entity

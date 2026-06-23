@@ -290,15 +290,9 @@ class InventoryRead(InventoryBase):
         orm_mode = True
 
 class InventoryUpdate(SQLModel):
-    name: Optional[str] = None
-    inventory_type: Optional[str] = None
-    serial_number: Optional[str] = None
+    component_id: Optional[int] = None
     quantity: Optional[int] = None
-    description: Optional[str] = None
-    oem_name: Optional[str] = None
-    manufacturer_part_number: Optional[str] = None
     location: Optional[str] = None
-    entity_id: Optional[int] = None
 
 # ---- Entity / History / Maintenance ----
 class EntityCreate(EntityBase):

@@ -4,9 +4,16 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models.tables import (Inventory, User)
 from app.schemas import schemas
+from app.services.create_entity import New_entity
+from app.services.create_entitystatusHistory import create_status_history
+from app.services.update_entity import update_entity_status
+from app.config.entities import ENTITY_CONFIG
 from app.routers.auth import require_permission
 
+entity_config = ENTITY_CONFIG.get("project")
+
 router = APIRouter()
+
 
 
 # ===================== INVENTORY ENDPOINTS =====================
@@ -14,6 +21,15 @@ router = APIRouter()
 def create_inventory(inventory: schemas.InventoryCreate, session: Session = Depends(get_session), current_user: User = Depends(require_permission("create_inventory"))):
     db_inventory = Inventory(**inventory.model_dump())
     session.add(db_inventory)
+    session.flush()
+
+# Create
+#    1.  Entity status
+#    2.  Entity Status History
+# --------------------------------------------------------------------------------------------------------------------------------------------
+    New_entity(session=session, entity=db_inventory, entity_name = entity_config["display_name"], changed_by_user= current_user.id)
+# --------------------------------------------------------------------------------------------------------------------------------------------
+
     session.commit()
     session.refresh(db_inventory)
     return db_inventory

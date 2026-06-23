@@ -31,11 +31,10 @@ def create_component(component: schemas.ComponentCreate, session: Session = Depe
 
     session.commit()
     session.refresh(db_component)
-    status_name = db_component.status.name if db_component.status else None
+    status_name = db_component.status.status_name if db_component.status else None
     return schemas.ComponentRead(
         **db_component.model_dump(),
         status_name=status_name,
-        inventory_items=db_component.inventory_items
     )
 
 @router.get("/components/", response_model=List[schemas.ComponentRead], tags=["components"])
@@ -43,11 +42,10 @@ def list_components(skip: int = 0, limit: int = 100, session: Session = Depends(
     components = session.exec(select(Component).offset(skip).limit(limit)).all()
     result = []
     for component in components:
-        status_name = component.status.name if component.status else None
+        status_name = component.status.status_name if component.status else None
         result.append(schemas.ComponentRead(
             **component.model_dump(),
             status_name=status_name,
-            inventory_items=component.inventory_items
         ))
     return result
 
@@ -56,11 +54,10 @@ def get_component(component_id: int, session: Session = Depends(get_session), cu
     component = session.get(Component, component_id)
     if not component:
         raise HTTPException(status_code=404, detail="Component not found")
-    status_name = component.status.name if component.status else None
+    status_name = component.status.status_name if component.status else None
     return schemas.ComponentRead(
         **component.model_dump(),
         status_name=status_name,
-        inventory_items=component.inventory_items
     )
 
 @router.put("/components/{component_id}/", response_model=schemas.ComponentRead, tags=["components"])
@@ -75,15 +72,14 @@ def update_component(component_id: int, component: schemas.ComponentUpdate, sess
 
 # Update Entity status and Create Entity Status History
 # --------------------------------------------------------------------------------------------------------------------------------------------
-    update_entity_status(session=session, entity= db_component, entity_name = entity_config["display_name"])
+    update_entity_status(session=session, entity= db_component, entity_name = entity_config["display_name"], changed_by_user= current_user.id)
 
     session.commit()
     session.refresh(db_component)
-    status_name = db_component.status.name if db_component.status else None
+    status_name = db_component.status.status_name if db_component.status else None
     return schemas.ComponentRead(
         **db_component.model_dump(),
         status_name=status_name,
-        inventory_items=db_component.inventory_items
     )
 
 @router.delete("/components/{component_id}/", tags=["components"])
@@ -95,9 +91,3 @@ def delete_component(component_id: int, session: Session = Depends(get_session),
     session.commit()
     return {"ok": True}
 
-@router.get("/components/{component_id}/inventory/", response_model=List[schemas.InventoryRead], tags=["components"])
-def list_component_inventory(component_id: int, session: Session = Depends(get_session), current_user: User = Depends(require_permission("view_components"))):
-    component = session.get(Component, component_id)
-    if not component:
-        raise HTTPException(status_code=404, detail="Component not found")
-    return component.inventory_items

@@ -1,7 +1,7 @@
 from typing import Optional, List
 from datetime import datetime
 from sqlmodel import SQLModel
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 from app.models.base import (
     UserBase,
     CustomerBase,
@@ -56,26 +56,38 @@ class UserUpdate(SQLModel):
     is_active: Optional[bool] = None
 
 
-class UserWithRoles(UserBase):
+class UserWithRoles(UserCommon):
     id: int
-    username: str
-    full_name: str
-    email: str | None = None
     roles: List[str]
+
+
+class MaintenanceUserRead(UserCommon):
+    """Nested user on maintenance endpoints — avoids loading projects/password."""
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 # ---- Customer ----
 class CustomerCreate(CustomerBase):
+    status_id: Optional[int] = None 
     pass
 
 class CustomerRead(CustomerBase):
     id: int
-    orders: Optional[List["OrderRead"]] = None
+    customer_code: Optional[str] = None
+    status_id: Optional[int] = None 
+    name: str 
+    status_name: Optional[str] = None 
+    updated_at: Optional[datetime] = None
+    orders: Optional[List[OrderRead]] = None
     class Config:
         orm_mode = True
 
 class CustomerUpdate(SQLModel):
     name: Optional[str] = None
     contact_info: Optional[str] = None
+    status_id: Optional[int] = None 
+    status_name: Optional[str] = None 
 
 # ---- Status ----
 class StatusCreate(StatusBase):
@@ -87,7 +99,7 @@ class StatusRead(StatusBase):
         orm_mode = True
 
 class StatusUpdate(SQLModel):
-    name: Optional[str] = None
+    status_name: Optional[str] = None
     description: Optional[str] = None
 
 class HierarchyCreate(HierarchyBase):
@@ -114,6 +126,8 @@ class OrderRead(OrderBase):
     customer_id: int
     status_name: Optional[str] = None
     projects: Optional[List["ProjectRead"]] = None
+    order_number: Optional[str] = None
+
 
     class Config:
         orm_mode = True
@@ -145,6 +159,7 @@ class ProjectUpdate(SQLModel):
     owner_id: Optional[int] = None
     order_id: Optional[int] = None
     status_id: Optional[int] = None
+    progress: Optional[int] = Field(default=None, ge=0, le=100)
 
 # ---- System / Subsystem / Module / Unit / Component ----
 class SystemCreate(SystemBase):

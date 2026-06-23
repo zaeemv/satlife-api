@@ -29,7 +29,7 @@ def create_unit(unit: schemas.UnitCreate, session: Session = Depends(get_session
 
     session.commit()
     session.refresh(db_unit)
-    status_name = db_unit.status.name if db_unit.status else None
+    status_name = db_unit.status.status_name if db_unit.status else None
     return schemas.UnitRead(
         **db_unit.model_dump(),
         status_name=status_name,
@@ -41,7 +41,7 @@ def list_units(skip: int = 0, limit: int = 100, session: Session = Depends(get_s
     units = session.exec(select(Unit).offset(skip).limit(limit)).all()
     result = []
     for unit in units:
-        status_name = unit.status.name if unit.status else None
+        status_name = unit.status.status_name if unit.status else None
         result.append(schemas.UnitRead(
             **unit.model_dump(),
             status_name=status_name,
@@ -54,7 +54,7 @@ def get_unit(unit_id: int, session: Session = Depends(get_session), current_user
     unit = session.get(Unit, unit_id)
     if not unit:
         raise HTTPException(status_code=404, detail="Unit not found")
-    status_name = unit.status.name if unit.status else None
+    status_name = unit.status.status_name if unit.status else None
     return schemas.UnitRead(
         **unit.model_dump(),
         status_name=status_name,
@@ -73,11 +73,11 @@ def update_unit(unit_id: int, unit: schemas.UnitUpdate, session: Session = Depen
 
 # Update Entity status and Create Entity Status History
 # --------------------------------------------------------------------------------------------------------------------------------------------
-    update_entity_status(session=session, entity= db_unit, entity_name = entity_config["display_name"])
+    update_entity_status(session=session, entity= db_unit, entity_name = entity_config["display_name"], changed_by_user= current_user.id)
 
     session.commit()
     session.refresh(db_unit)
-    status_name = db_unit.status.name if db_unit.status else None
+    status_name = db_unit.status.status_name if db_unit.status else None
     return schemas.UnitRead(
         **db_unit.model_dump(),
         status_name=status_name,

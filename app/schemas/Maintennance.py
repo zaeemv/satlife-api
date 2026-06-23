@@ -3,8 +3,9 @@ from pydantic import ConfigDict
 from app.models.base import (MaintenanceCaseBase, FaultyEntityBase, MaintenanceActionBase, MaintenanceDeliveryBase)
 from typing import List, Optional
 from app.models.base import EntityType, FaultType, CaseStatus, FaultyEntityStatus, ResolutionType, ActionOutcome, DeliveryStatus
-from .schemas import UserRead
-from datetime import datetime
+from .schemas import EntityRead, MaintenanceUserRead
+from datetime import datetime, datetime, timezone
+
 
 # =============================================================================
 # B. NEW SCHEMAS
@@ -68,7 +69,8 @@ class SuspectChildrenPayload(SQLModel):
     """
     entity_type:       EntityType
     entity_id:         int
-    fault_type:        FaultType       = FaultType.UNCLASSIFIED
+    fault_type:        FaultType
+    entity_status:     Optional[FaultyEntityStatus] = FaultyEntityStatus.SUSPECTED
     fault_description: Optional[str]   = None
     entity_name:       Optional[str]   = None  # for FE label; optional but saves a lookup
     serial_number:     Optional[str]   = None
@@ -130,7 +132,7 @@ class MaintenanceCaseRead(MaintenanceCaseBase):
     case_number:      str
     project_id:       int
     reported_by:      Optional[int]                 = None
-    reported_by_user: Optional[UserRead]            = None
+    reported_by_user: Optional[MaintenanceUserRead]            = None
     faulty_entities:  List["FaultyEntityRead"]       = []
     deliveries:       List["MaintenanceDeliveryRead"] = []
 
@@ -170,7 +172,7 @@ class FaultyEntityRead(FaultyEntityBase):
     id:                      int
     case_id:                 int
     identified_by:           Optional[int]                = None
-    identified_by_user:      Optional[UserRead]           = None
+    identified_by_user:      Optional[MaintenanceUserRead]           = None
     parent_faulty_entity_id: Optional[int]                = None
     actions:                 List["MaintenanceActionRead"] = []
 
@@ -218,13 +220,15 @@ class FaultyEntityCascadeRead(SQLModel):
 
 class MaintenanceActionCreate(MaintenanceActionBase):
     """POST /faulty-entities/{faulty_entity_id}/actions/"""
+    faulty_entity_id: int
     performed_by: Optional[int] = None
+    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MaintenanceActionRead(MaintenanceActionBase):
     id:                      int
     faulty_entity_id:        int
     performed_by:            Optional[int]     = None
-    performed_by_user:       Optional[UserRead] = None
+    performed_by_user:       Optional[MaintenanceUserRead] = None
     replacement_entity_id:   Optional[int]     = None
     replacement_entity_type: Optional[EntityType] = None
 
@@ -234,6 +238,8 @@ class MaintenanceActionUpdate(SQLModel):
     """PUT /maintenance-actions/{id}/"""
     notes:   Optional[str]           = None
     outcome: Optional[ActionOutcome] = None
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 
 
 # =============================================================================
@@ -257,7 +263,7 @@ class MaintenanceDeliveryRead(MaintenanceDeliveryBase):
     id:                int
     case_id:           int
     delivered_by:      Optional[int]     = None
-    delivered_by_user: Optional[UserRead] = None
+    delivered_by_user: Optional[MaintenanceUserRead] = None
     created_at:        datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -268,3 +274,127 @@ class MaintenanceDeliveryUpdate(SQLModel):
     delivered_at: Optional[datetime]       = None
     received_by:  Optional[str]            = None
     notes:        Optional[str]            = None
+
+
+
+class ConfigurationHistoryCreate(SQLModel):
+
+    entity_id: int
+
+    maintenance_case_id: Optional[int] = None
+
+    performed_by: int
+
+    approved_by: Optional[int] = None
+
+    verified_by: Optional[int] = None
+
+    installation_date: Optional[datetime] = None
+
+    removal_date: Optional[datetime] = None
+
+    fault_type: Optional[FaultType] = None
+
+    resolution_type: ResolutionType
+
+    old_part_number: Optional[str] = None
+    new_part_number: Optional[str] = None
+
+    old_serial_number: Optional[str] = None
+    new_serial_number: Optional[str] = None
+
+    old_revision: Optional[str] = None
+    new_revision: Optional[str] = None
+
+    old_batch_number: Optional[str] = None
+    new_batch_number: Optional[str] = None
+
+    operating_hours: Optional[float] = None
+
+    operating_cycles: Optional[int] = None
+
+    work_order_number: Optional[str] = None
+
+    reason: Optional[str] = None
+
+    corrective_action: Optional[str] = None
+
+    remarks: Optional[str] = None
+
+class ConfigurationHistoryUpdate(SQLModel):
+
+    approved_by: Optional[int] = None
+
+    verified_by: Optional[int] = None
+
+    installation_date: Optional[datetime] = None
+
+    removal_date: Optional[datetime] = None
+
+    work_order_number: Optional[str] = None
+
+    reason: Optional[str] = None
+
+    corrective_action: Optional[str] = None
+
+    remarks: Optional[str] = None
+
+class ConfigurationHistoryRead(SQLModel):
+
+    id: int
+
+    entity_id: int
+
+    maintenance_case_id: Optional[int] = None
+
+    performed_by: int
+    approved_by: Optional[int] = None
+    verified_by: Optional[int] = None
+
+    change_date: datetime
+
+    installation_date: Optional[datetime] = None
+
+    removal_date: Optional[datetime] = None
+
+    fault_type: Optional[FaultType] = None
+
+    resolution_type: ResolutionType
+
+    old_part_number: Optional[str] = None
+    new_part_number: Optional[str] = None
+
+    old_serial_number: Optional[str] = None
+    new_serial_number: Optional[str] = None
+
+    old_revision: Optional[str] = None
+    new_revision: Optional[str] = None
+
+    old_batch_number: Optional[str] = None
+    new_batch_number: Optional[str] = None
+
+    operating_hours: Optional[float] = None
+
+    operating_cycles: Optional[int] = None
+
+    work_order_number: Optional[str] = None
+
+    reason: Optional[str] = None
+
+    corrective_action: Optional[str] = None
+
+    remarks: Optional[str] = None
+
+    entity: Optional["EntityRead"] = None
+
+    maintenance_case: Optional["MaintenanceCaseRead"] = None
+
+    # performed_by_user: Optional["UserRead"] = None
+
+    # approved_by_user: Optional["UserRead"] = None
+
+    # verified_by_user: Optional["UserRead"] = None
+
+    class Config:
+        from_attributes = True
+

@@ -119,6 +119,7 @@ DEFAULT_PERMISSIONS = [
     {"name": "create_customers", "description": "Create customers"},
     {"name": "edit_customers", "description": "Edit customers"},
     {"name": "delete_customers", "description": "Delete customers"},
+    {"name": "customers", "description": "list all customers"},
     
     # ==================== ORDERS MANAGEMENT ====================
     {"name": "view_orders", "description": "View orders"},
@@ -199,6 +200,7 @@ DEFAULT_PERMISSIONS = [
     
     # ==================== REPORTS & ANALYTICS ====================
     {"name": "view_reports", "description": "View reports"},
+    {"name": "view_executive_dashboard", "description": "View executive dashboard analytics"},
     {"name": "export_reports", "description": "Export reports"},
     
     # ==================== ROLE MANAGEMENT ====================
@@ -236,6 +238,12 @@ DEFAULT_PERMISSIONS = [
     {"name": "edit_maintenance_deliveries", "description": "Edit maintenance deliveries"},
     {"name": "delete_maintenance_deliveries", "description": "Delete maintenance deliveries"},
     {"name": "confirm_maintenance_deliveries", "description": "Confirm maintenance deliveries"},
+
+    # ==================== MAINTENANCE DELIVERIES ====================
+    {"name": "view_configuration_history", "description": "View configuration history"},
+    {"name": "create_configuration_history", "description": "Create_configuration history"},
+    {"name": "edit_configuration_history", "description": "Edit configuration history"},
+    {"name": "delete_configuration_history", "description": "Delete configuration history"},
 ]
 
 DEFAULT_ROLES = [
@@ -266,6 +274,7 @@ DEFAULT_ROLES = [
             "view_maintenance", "create_maintenance", "edit_maintenance",
             # Reports
             "view_reports",
+            "view_executive_dashboard",
             # Entities
             "view_entities", "create_entities", "edit_entities",
             # Status
@@ -328,6 +337,7 @@ DEFAULT_ROLES = [
             "view_statuses", "view_status_history",
             # Reports
             "view_reports",
+            "view_executive_dashboard",
 
             # Maintenance Cases
             "view_maintenance_cases",
@@ -380,6 +390,7 @@ DEFAULT_ROLES = [
             "view_statuses", "view_status_history",
             # Reports
             "view_reports",
+            "view_executive_dashboard",
 
             # Maintenance Cases
             "view_maintenance_cases",
@@ -448,6 +459,7 @@ DEFAULT_ROLES = [
             "view_hierarchy",
             # Reports
             "view_reports",
+            "view_executive_dashboard",
 
             # Maintenance Cases
             "view_maintenance_cases",
@@ -482,7 +494,6 @@ def initialize_roles_and_permissions(session: Session):
     
     for role_data in DEFAULT_ROLES:
         role = Role(name=role_data["name"], description=role_data["description"])
-        print(role_data["permissions"])
         role.permissions = [permission_map[perm_name] for perm_name in role_data["permissions"]]
         session.add(role)
     
